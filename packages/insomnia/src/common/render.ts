@@ -233,7 +233,7 @@ export async function render<T>(
   // Make a deep copy so no one gets mad :)
   const newObj = clone(obj);
 
-  async function next<T>(x: T, path: string, first = false, stringCache: Map<string, renderStringCache[]>) {
+  async function next<T>(x: T, path: string, first = false, stringCache?: Map<string, renderStringCache[]>) {
     if (blacklistPathRegex && path.match(blacklistPathRegex)) {
       return x;
     }
