@@ -61,11 +61,13 @@ export async function buildRenderContext(
     rootEnvironment,
     subEnvironment,
     baseContext = {},
+    stringCache,
   }: {
     ancestors?: RenderContextAncestor[];
     rootEnvironment?: Environment;
     subEnvironment?: Environment;
     baseContext?: Record<string, any>;
+    stringCache?: Map<string, renderStringCache[]>;
   },
 ) {
   const envObjects: Record<string, any>[] = [];
@@ -143,6 +145,7 @@ export async function buildRenderContext(
             null,
             KEEP_ON_ERROR,
             'Environment',
+            stringCache,
           );
         } else {
           // Otherwise it's just a regular replacement
@@ -189,6 +192,7 @@ export async function buildRenderContext(
         null,
         KEEP_ON_ERROR,
         'Environment',
+        stringCache,
       );
 
       // Result didn't change, so skip
@@ -203,6 +207,11 @@ export async function buildRenderContext(
 
   return finalRenderContext;
 }
+
+export interface renderStringCache {
+  context: Record<string, any>;
+  rendered: string;
+};
 
 /**
  * Recursively render any JS object and return a new one
@@ -219,6 +228,7 @@ export async function render<T>(
   blacklistPathRegex: RegExp | null = null,
   errorMode: string = THROW_ON_ERROR,
   name = '',
+  stringCache?: Map<string, renderStringCache[]>,
 ) {
   // Make a deep copy so no one gets mad :)
   const newObj = clone(obj);
@@ -242,23 +252,49 @@ export async function render<T>(
     ) {
       // Do nothing to these types
     } else if (typeof x === 'string') {
-      try {
-        // @ts-expect-error -- TSCONVERSION
-        x = await templating.render(x, { context, path });
+      // check if the tag content is cached for same context
+      let cached = false;
+      if (stringCache != null) {
+        const cacheEntries = stringCache.get(path);
+        if (cacheEntries != null) {
+          cacheEntries.forEach(cacheEntry => {
+            if (context === cacheEntry.context) {
+              x = cacheEntry.rendered as T; // rendered string must be a string
+              cached = true;
+            }
+          });
+        }
+      }
 
-        // If the variable outputs a tag, render it again. This is a common use
-        // case for environment variables:
-        //   {{ foo }} => {% uuid 'v4' %} => dd265685-16a3-4d76-a59c-e8264c16835a
-        // @ts-expect-error -- TSCONVERSION
-        if (x.includes('{%')) {
+      // render if no cache found
+      if (!cached) {
+        try {
           // @ts-expect-error -- TSCONVERSION
           x = await templating.render(x, { context, path });
+
+          // If the variable outputs a tag, render it again. This is a common use
+          // case for environment variables:
+          //   {{ foo }} => {% uuid 'v4' %} => dd265685-16a3-4d76-a59c-e8264c16835a
+          // @ts-expect-error -- TSCONVERSION
+          if (x.includes('{%')) {
+            // @ts-expect-error -- TSCONVERSION
+            x = await templating.render(x, { context, path });
+          }
+        } catch (err) {
+          console.log(`Failed to render element ${path}`, x);
+          if (errorMode !== KEEP_ON_ERROR) {
+            throw err;
+          }
         }
-      } catch (err) {
-        console.log(`Failed to render element ${path}`, x);
-        if (errorMode !== KEEP_ON_ERROR) {
-          throw err;
+      }
+
+      // update cache
+      if (!cached && stringCache != null) {
+        let cacheEntries = stringCache.get(path);
+        if (cacheEntries == null) {
+          cacheEntries = new Array<renderStringCache>;
         }
+        stringCache = stringCache.set(path, [...cacheEntries, { context, rendered: x as string }]);
       }
     } else if (Array.isArray(x)) {
       for (let i = 0; i < x.length; i++) {
@@ -300,6 +336,7 @@ interface BaseRenderContextOptions {
   environmentId?: string;
   purpose?: RenderPurpose;
   extraInfo?: ExtraRenderInfo;
+  stringCache?: Map<string, renderStringCache[]>;
 }
 
 interface RenderContextOptions extends BaseRenderContextOptions, Partial<RenderRequest<Request | GrpcRequest | WebSocketRequest>> {
@@ -312,6 +349,7 @@ export async function getRenderContext(
     ancestors: _ancestors,
     purpose,
     extraInfo,
+    stringCache,
   }: RenderContextOptions,
 ): Promise<Record<string, any>> {
   const ancestors = _ancestors || await getRenderContextAncestors(request);
@@ -399,7 +437,7 @@ export async function getRenderContext(
   };
 
   // Generate the context we need to render
-  return buildRenderContext({ ancestors, rootEnvironment, subEnvironment: subEnvironment || undefined, baseContext });
+  return buildRenderContext({ ancestors, rootEnvironment, subEnvironment: subEnvironment || undefined, baseContext, stringCache });
 }
 interface BaseRenderContext {
   getMeta: () => {};
@@ -457,19 +495,21 @@ export interface RequestAndContext {
   request: RenderedRequest;
   context: Record<string, any>;
 }
+
 export async function getRenderedRequestAndContext(
   {
     request,
     environmentId,
     extraInfo,
     purpose,
+    stringCache,
   }: RenderRequestOptions,
 ): Promise<RequestAndContext> {
   const ancestors = await getRenderContextAncestors(request);
   const workspace = ancestors.find(isWorkspace);
   const parentId = workspace ? workspace._id : 'n/a';
   const cookieJar = await models.cookieJar.getOrCreateForParentId(parentId);
-  const renderContext = await getRenderContext({ request, environmentId, ancestors, purpose, extraInfo });
+  const renderContext = await getRenderContext({ request, environmentId, ancestors, purpose, extraInfo, stringCache });
 
   // HACK: Switch '#}' to '# }' to prevent Nunjucks from barfing
   // https://github.com/kong/insomnia/issues/895
@@ -493,9 +533,10 @@ export async function getRenderedRequestAndContext(
     renderContext,
     request.settingDisableRenderRequestBody ? /^body.*/ : null,
   );
+
   const renderedRequest = renderResult._request;
   const renderedCookieJar = renderResult._cookieJar;
-  renderedRequest.description = await render(description, renderContext, null, KEEP_ON_ERROR);
+  renderedRequest.description = description !== '' ? await render(description, renderContext, null, KEEP_ON_ERROR) : '';
   const suppressUserAgent = request.headers.some(h => h.name.toLowerCase() === 'user-agent' && h.disabled === true);
   // Remove disabled params
   renderedRequest.parameters = renderedRequest.parameters.filter(p => !p.disabled);

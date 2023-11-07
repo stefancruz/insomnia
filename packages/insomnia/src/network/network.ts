@@ -15,6 +15,7 @@ import {
   getRenderedRequestAndContext,
   RENDER_PURPOSE_NO_RENDER,
 } from '../common/render';
+import { renderStringCache } from '../common/render';
 import type { HeaderResult, ResponsePatch, ResponseTimelineEntry } from '../main/network/libcurl-promise';
 import * as models from '../models';
 import { CaCertificate } from '../models/ca-certificate';
@@ -64,13 +65,14 @@ export const fetchRequestData = async (requestId: string) => {
   return { request, environment, settings, clientCertificates, caCert, activeEnvironmentId };
 };
 
-export const tryToInterpolateRequest = async (request: Request, environmentId: string, purpose?: RenderPurpose, extraInfo?: ExtraRenderInfo) => {
+export const tryToInterpolateRequest = async (request: Request, environmentId: string, purpose?: RenderPurpose, extraInfo?: ExtraRenderInfo, stringCache?: Map<string, renderStringCache[]>) => {
   try {
     return await getRenderedRequestAndContext({
       request: request,
       environmentId,
       purpose,
       extraInfo,
+      stringCache,
     });
   } catch (err) {
     if ('type' in err && err.type === 'render') {
@@ -79,6 +81,7 @@ export const tryToInterpolateRequest = async (request: Request, environmentId: s
     throw new Error(`Failed to render request: ${request._id}`);
   }
 };
+
 export const tryToTransformRequestWithPlugins = async (renderResult: RequestAndContext) => {
   const { request, context } = renderResult;
   try {
@@ -87,6 +90,7 @@ export const tryToTransformRequestWithPlugins = async (renderResult: RequestAndC
     throw new Error(`Failed to transform request with plugins: ${request._id}`);
   }
 };
+
 export async function sendCurlAndWriteTimeline(
   renderedRequest: RenderedRequest,
   clientCertificates: ClientCertificate[],
@@ -160,6 +164,7 @@ export async function sendCurlAndWriteTimeline(
     ...patch,
   };
 }
+
 export const responseTransform = async (patch: ResponsePatch, environmentId: string | null, renderedRequest: RenderedRequest, context: Record<string, any>) => {
   const response: ResponsePatch = {
     ...patch,
@@ -181,6 +186,7 @@ export const responseTransform = async (patch: ResponsePatch, environmentId: str
     context,
   );
 };
+
 export const transformUrl = (url: string, params: RequestParameter[], authentication: RequestAuthentication, shouldEncode: boolean) => {
   const authQueryParam = getAuthQueryParams(authentication);
   const customUrl = joinUrlAndQueryString(url, buildQueryStringFromParams(authQueryParam ? params.concat([authQueryParam]) : params));

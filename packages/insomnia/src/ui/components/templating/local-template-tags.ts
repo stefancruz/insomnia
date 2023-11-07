@@ -561,6 +561,7 @@ const localTemplatePlugins: { templateTag: PluginTemplateTag }[] = [
       ],
 
       async run(context, field, id, filter, resendBehavior, maxAgeSeconds) {
+        // prepare for sending
         filter = filter || '';
         resendBehavior = (resendBehavior || 'never').toLowerCase();
 
@@ -606,6 +607,7 @@ const localTemplatePlugins: { templateTag: PluginTemplateTag }[] = [
 
         }
 
+        // send request
         // Make sure we only send the request once per render so we don't have infinite recursion
         const requestChain = context.context.getExtraInfo?.('requestChain') || [];
         if (requestChain.some((id: any) => id === request._id)) {
