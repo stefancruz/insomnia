@@ -118,6 +118,7 @@ export async function buildRenderContext(
   async function renderSubContext(
     subObject: Record<string, any>,
     subContext: Record<string, any>,
+    stringCache?: Map<string, renderStringCache[]>,
   ) {
     const keys = _getOrderedEnvironmentKeys(subObject);
 
@@ -153,7 +154,7 @@ export async function buildRenderContext(
         }
       } else if (Object.prototype.toString.call(subContext[key]) === '[object Object]') {
         // Context is of Type object, Call this function recursively to handle nested objects.
-        subContext[key] = await renderSubContext(subObject[key], subContext[key]);
+        subContext[key] = await renderSubContext(subObject[key], subContext[key], stringCache);
       } else {
         // For all other Types, add the Object to the Context.
         subContext[key] = subObject[key];
@@ -165,7 +166,7 @@ export async function buildRenderContext(
 
   for (const envObject of envObjects) {
     // For every environment render the Objects
-    renderContext = await renderSubContext(envObject, renderContext);
+    renderContext = await renderSubContext(envObject, renderContext, clone(stringCache));
   }
 
   // Render the context with itself to fill in the rest.
@@ -233,7 +234,7 @@ export async function render<T>(
   // Make a deep copy so no one gets mad :)
   const newObj = clone(obj);
 
-  async function next<T>(x: T, path: string, first = false, stringCache?: Map<string, renderStringCache[]>) {
+  async function next<T>(x: T, path: string, first = false) {
     if (blacklistPathRegex && path.match(blacklistPathRegex)) {
       return x;
     }
@@ -254,8 +255,9 @@ export async function render<T>(
     } else if (typeof x === 'string') {
       // check if the tag content is cached for same context
       let cached = false;
+      const rawVal = x as string;
       if (stringCache != null) {
-        const cacheEntries = stringCache.get(path);
+        const cacheEntries = stringCache.get(rawVal);
         if (cacheEntries != null) {
           cacheEntries.forEach(cacheEntry => {
             if (context === cacheEntry.context) {
@@ -290,15 +292,15 @@ export async function render<T>(
 
       // update cache
       if (!cached && stringCache != null) {
-        let cacheEntries = stringCache.get(path);
+        let cacheEntries = stringCache.get(rawVal);
         if (cacheEntries == null) {
           cacheEntries = new Array<renderStringCache>;
         }
-        stringCache = stringCache.set(path, [...cacheEntries, { context, rendered: x as string }]);
+        stringCache = stringCache.set(rawVal, [...cacheEntries, { context, rendered: x as string }]);
       }
     } else if (Array.isArray(x)) {
       for (let i = 0; i < x.length; i++) {
-        x[i] = await next(x[i], `${path}[${i}]`, false, clone(stringCache));
+        x[i] = await next(x[i], `${path}[${i}]`);
       }
     } else if (typeof x === 'object' && x !== null) {
       // Don't even try rendering disabled objects
@@ -313,11 +315,11 @@ export async function render<T>(
       for (const key of keys) {
         if (first && key.indexOf('_') === 0) {
           // @ts-expect-error -- mapping unsoundness
-          x[key] = await next(x[key], path, false, clone(stringCache));
+          x[key] = await next(x[key], path);
         } else {
           const pathPrefix = path ? path + '.' : '';
           // @ts-expect-error -- mapping unsoundness
-          x[key] = await next(x[key], `${pathPrefix}${key}`, false, clone(stringCache));
+          x[key] = await next(x[key], `${pathPrefix}${key}`);
         }
       }
     }
@@ -325,7 +327,7 @@ export async function render<T>(
     return x;
   }
 
-  return next<T>(newObj, name, true, stringCache);
+  return next<T>(newObj, name, true);
 }
 
 interface RenderRequest<T extends Request | GrpcRequest | WebSocketRequest> {
@@ -532,11 +534,14 @@ export async function getRenderedRequestAndContext(
     },
     renderContext,
     request.settingDisableRenderRequestBody ? /^body.*/ : null,
+    THROW_ON_ERROR,
+    '',
+    stringCache,
   );
 
   const renderedRequest = renderResult._request;
   const renderedCookieJar = renderResult._cookieJar;
-  renderedRequest.description = description !== '' ? await render(description, renderContext, null, KEEP_ON_ERROR) : '';
+  renderedRequest.description = description !== '' ? await render(description, renderContext, null, KEEP_ON_ERROR, '', stringCache) : '';
   const suppressUserAgent = request.headers.some(h => h.name.toLowerCase() === 'user-agent' && h.disabled === true);
   // Remove disabled params
   renderedRequest.parameters = renderedRequest.parameters.filter(p => !p.disabled);
