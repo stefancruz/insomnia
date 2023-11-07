@@ -233,7 +233,7 @@ export async function render<T>(
   // Make a deep copy so no one gets mad :)
   const newObj = clone(obj);
 
-  async function next<T>(x: T, path: string, first = false) {
+  async function next<T>(x: T, path: string, first = false, stringCache: Map<string, renderStringCache[]>) {
     if (blacklistPathRegex && path.match(blacklistPathRegex)) {
       return x;
     }
@@ -298,7 +298,7 @@ export async function render<T>(
       }
     } else if (Array.isArray(x)) {
       for (let i = 0; i < x.length; i++) {
-        x[i] = await next(x[i], `${path}[${i}]`);
+        x[i] = await next(x[i], `${path}[${i}]`, false, clone(stringCache));
       }
     } else if (typeof x === 'object' && x !== null) {
       // Don't even try rendering disabled objects
@@ -313,11 +313,11 @@ export async function render<T>(
       for (const key of keys) {
         if (first && key.indexOf('_') === 0) {
           // @ts-expect-error -- mapping unsoundness
-          x[key] = await next(x[key], path);
+          x[key] = await next(x[key], path, false, clone(stringCache));
         } else {
           const pathPrefix = path ? path + '.' : '';
           // @ts-expect-error -- mapping unsoundness
-          x[key] = await next(x[key], `${pathPrefix}${key}`);
+          x[key] = await next(x[key], `${pathPrefix}${key}`, false, clone(stringCache));
         }
       }
     }
@@ -325,7 +325,7 @@ export async function render<T>(
     return x;
   }
 
-  return next<T>(newObj, name, true);
+  return next<T>(newObj, name, true, stringCache);
 }
 
 interface RenderRequest<T extends Request | GrpcRequest | WebSocketRequest> {
