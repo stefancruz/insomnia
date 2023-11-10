@@ -1,7 +1,6 @@
 import React, { FC, Fragment } from 'react';
 import { useRouteLoaderData } from 'react-router-dom';
 
-import * as session from '../../../account/session';
 import {
   EditorKeyMap,
   isMac,
@@ -42,7 +41,6 @@ export const General: FC = () => {
   const {
     settings,
   } = useRouteLoaderData('root') as RootLoaderData;
-  const isLoggedIn = session.isLoggedIn();
 
   return (
     <div className="pad-bottom">
@@ -363,23 +361,6 @@ export const General: FC = () => {
         help="Add a custom path to direct Insomnia to a different plugin directory."
         placeholder="~/.insomnia:/other/path"
       />
-
-      {!isLoggedIn && (
-        <>
-          <hr className="pad-top" />
-          <h2>Network Activity</h2>
-          <BooleanSetting
-            descriptions={[
-              `Help Kong improve its products by sending anonymous data about features and plugins used, hardware and software configuration, statistics on number of requests, ${strings.collection.plural.toLowerCase()}, ${strings.document.plural.toLowerCase()}, etc.`,
-              'Please note that this will not include personal data or any sensitive information, such as request data, names, etc.',
-            ]}
-            label="Send Anonymous Usage Statistics"
-            setting="enableAnalytics"
-            disabled={isLoggedIn}
-          />
-        </>
-      )
-      }
     </div>
   );
 };

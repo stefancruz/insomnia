@@ -1,4 +1,4 @@
-const BINARY_PREFIX = 'Insomnia.Core';
+const BINARY_PREFIX = 'Insomnia.Libre';
 
 // NOTE: USE_HARD_LINKS
 // https://github.com/electron-userland/electron-builder/issues/4594#issuecomment-574653870
@@ -9,7 +9,7 @@ const BINARY_PREFIX = 'Insomnia.Core';
  */
 const config = {
   npmRebuild: false,
-  appId: 'com.insomnia.app',
+  appId: 'com.insomniaLibre.app',
   protocols: [
     {
       name: 'Insomnia',
@@ -107,7 +107,7 @@ const config = {
   linux: {
     artifactName: `${BINARY_PREFIX}-\${version}.\${ext}`,
     executableName: 'insomnia',
-    synopsis: 'The Collaborative API Client and Design Tool',
+    synopsis: 'The API Client and Design Tool',
     category: 'Development',
     desktop: {
       Name: 'Insomnia',

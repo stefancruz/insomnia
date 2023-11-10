@@ -46,8 +46,8 @@ jobs:
       - name: Temporarily move Windows artifacts
         shell: bash
         run: |
-          mv ./artifacts/windows-latest-artifacts/insomnia/dist/squirrel-windows/Insomnia.Core-${{ env.RELEASE_VERSION }}.exe ./artifacts/
-          mv ./artifacts/windows-latest-artifacts/insomnia/dist/Insomnia.Core-${{ env.RELEASE_VERSION }}-portable.exe ./artifacts/
+          mv ./artifacts/windows-latest-artifacts/insomnia/dist/squirrel-windows/Insomnia.Libre-${{ env.RELEASE_VERSION }}.exe ./artifacts/
+          mv ./artifacts/windows-latest-artifacts/insomnia/dist/Insomnia.Libre-${{ env.RELEASE_VERSION }}-portable.exe ./artifacts/
 
       - name: Code-sign Windows .exe artifact
         uses: sslcom/actions-codesigner@develop
@@ -57,7 +57,7 @@ jobs:
           password: ${{secrets.ES_PASSWORD}}
           credential_id: ${{secrets.ES_CREDENTIAL_ID}}
           totp_secret: ${{secrets.ES_TOTP_SECRET}}
-          file_path: ${GITHUB_WORKSPACE}/artifacts/Insomnia.Core-${{ env.RELEASE_VERSION }}.exe
+          file_path: ${GITHUB_WORKSPACE}/artifacts/Insomnia.Libre-${{ env.RELEASE_VERSION }}.exe
           output_path: ${GITHUB_WORKSPACE}/artifacts/windows-latest-artifacts/insomnia/dist/squirrel-windows
 
       - name: Code-sign Windows portable .exe artifact
@@ -68,7 +68,7 @@ jobs:
           password: ${{secrets.ES_PASSWORD}}
           credential_id: ${{secrets.ES_CREDENTIAL_ID}}
           totp_secret: ${{secrets.ES_TOTP_SECRET}}
-          file_path: ${GITHUB_WORKSPACE}/artifacts/Insomnia.Core-${{ env.RELEASE_VERSION }}-portable.exe
+          file_path: ${GITHUB_WORKSPACE}/artifacts/Insomnia.Libre-${{ env.RELEASE_VERSION }}-portable.exe
           output_path: ${GITHUB_WORKSPACE}/artifacts/windows-latest-artifacts/insomnia/dist
 
       - name: Set Inso CLI version on Github Env
@@ -136,7 +136,7 @@ jobs:
         env:
           INSOMNIA_API_URL: ${{ secrets.INSOMNIA_API_URL }}
           INSOMNIA_API_TOKEN: ${{ secrets.INSOMNIA_API_TOKEN }}
-          RELEASE_APP: com.insomnia.app
+          RELEASE_APP: com.insomniaLibre.app
           RELEASE_VERSION: ${{ env.RELEASE_VERSION }}
           RELEASE_CHANNEL: ${{ contains(github.event.inputs.version, 'beta') && 'beta' || 'stable' }}
 
@@ -163,7 +163,7 @@ jobs:
         env:
           SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_LOGIN_FILE }}
         with:
-          snap: artifacts/ubuntu-latest-artifacts/insomnia/dist/Insomnia.Core-${{ env.RELEASE_VERSION }}.snap
+          snap: artifacts/ubuntu-latest-artifacts/insomnia/dist/Insomnia.Libre-${{ env.RELEASE_VERSION }}.snap
           release: ${{ contains(github.event.inputs.version, 'beta') && 'beta' || 'stable' }}
 
       - name: Upload .deb to pulp and/or cloudsmith (stable only)
@@ -182,7 +182,7 @@ jobs:
           entrypoint: /entrypoint.sh
           args: >
             release
-            --file artifacts/ubuntu-latest-artifacts/insomnia/dist/Insomnia.Core-${{ env.RELEASE_VERSION }}.deb
+            --file artifacts/ubuntu-latest-artifacts/insomnia/dist/Insomnia.Libre-${{ env.RELEASE_VERSION }}.deb
             --dist-name ubuntu
             --dist-version focal
             --package-type insomnia

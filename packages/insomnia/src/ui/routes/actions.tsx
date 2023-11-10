@@ -17,13 +17,12 @@ import { DEFAULT_PROJECT_ID, isRemoteProject } from '../../models/project';
 import { isRequest, Request } from '../../models/request';
 import { isRequestGroup, isRequestGroupId } from '../../models/request-group';
 import { UnitTest } from '../../models/unit-test';
-import { isCollection, Workspace } from '../../models/workspace';
+import { Workspace } from '../../models/workspace';
 import { WorkspaceMeta } from '../../models/workspace-meta';
 import { getSendRequestCallback } from '../../network/unit-test-feature';
 import { initializeLocalBackendProjectAndMarkForSync } from '../../sync/vcs/initialize-backend-project';
 import { getVCS } from '../../sync/vcs/vcs';
 import { invariant } from '../../utils/invariant';
-import { SegmentEvent } from '../analytics';
 
 // Project
 export const createNewProjectAction: ActionFunction = async ({ request, params }) => {
@@ -33,7 +32,6 @@ export const createNewProjectAction: ActionFunction = async ({ request, params }
   const name = formData.get('name');
   invariant(typeof name === 'string', 'Name is required');
   const project = await models.project.create({ name });
-  window.main.trackSegmentEvent({ event: SegmentEvent.projectLocalCreate });
   return redirect(`/organization/${organizationId}/project/${project._id}`);
 };
 
@@ -72,8 +70,6 @@ export const deleteProjectAction: ActionFunction = async ({ params }) => {
 
   await models.stats.incrementDeletedRequestsForDescendents(project);
   await models.project.remove(project);
-
-  window.main.trackSegmentEvent({ event: SegmentEvent.projectLocalDelete });
 
   return redirect(`/organization/${DEFAULT_ORGANIZATION_ID}/project/${DEFAULT_PROJECT_ID}`);
 };
@@ -129,11 +125,6 @@ export const createNewWorkspaceAction: ActionFunction = async ({
     }
   }
 
-  window.main.trackSegmentEvent({
-    event: isCollection(workspace)
-      ? SegmentEvent.collectionCreate
-      : SegmentEvent.documentCreate,
-  });
 
   return redirect(
     `/organization/${organizationId}/project/${projectId}/workspace/${workspace._id}/${workspace.scope === 'collection' ? ACTIVITY_DEBUG : ACTIVITY_SPEC
@@ -283,7 +274,6 @@ export const createNewTestSuiteAction: ActionFunction = async ({
     name,
   });
 
-  window.main.trackSegmentEvent({ event: SegmentEvent.testSuiteCreate });
 
   return redirect(`/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/test/test-suite/${unitTestSuite._id}`);
 };
@@ -299,8 +289,6 @@ export const deleteTestSuiteAction: ActionFunction = async ({ params }) => {
   invariant(unitTestSuite, 'Test Suite not found');
 
   await models.unitTestSuite.remove(unitTestSuite);
-
-  window.main.trackSegmentEvent({ event: SegmentEvent.testSuiteDelete });
 
   return redirect(`/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/test`);
 };
@@ -337,7 +325,6 @@ export const runAllTestsAction: ActionFunction = async ({
     parentId: workspaceId,
   });
 
-  window.main.trackSegmentEvent({ event: SegmentEvent.unitTestRun });
 
   return redirect(`/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/test/test-suite/${testSuiteId}/test-result/${testResult._id}`);
 };
@@ -379,7 +366,6 @@ expect(response1.status).to.equal(200);`,
     name,
   });
 
-  window.main.trackSegmentEvent({ event: SegmentEvent.unitTestCreate });
 
   return null;
 };
@@ -395,7 +381,6 @@ export const deleteTestAction: ActionFunction = async ({ params }) => {
   invariant(unitTest, 'Test not found');
 
   await models.unitTest.remove(unitTest);
-  window.main.trackSegmentEvent({ event: SegmentEvent.unitTestDelete });
 
   return null;
 };
@@ -450,8 +435,6 @@ export const runTestAction: ActionFunction = async ({ params }) => {
     results,
     parentId: unitTest.parentId,
   });
-
-  window.main.trackSegmentEvent({ event: SegmentEvent.unitTestRun });
 
   return redirect(`/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/test/test-suite/${testSuiteId}/test-result/${testResult._id}`);
 };

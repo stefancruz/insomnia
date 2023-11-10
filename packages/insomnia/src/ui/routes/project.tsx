@@ -12,7 +12,6 @@ import {
   Popover,
   SearchField,
   Select,
-  SelectValue,
 } from 'react-aria-components';
 import {
   LoaderFunction,
@@ -64,7 +63,6 @@ import { ImportModal } from '../components/modals/import-modal';
 import { EmptyStatePane } from '../components/panes/project-empty-state-pane';
 import { SidebarLayout } from '../components/sidebar-layout';
 import { TimeFromNow } from '../components/time-from-now';
-import { useOrganizationLoaderData } from './organization';
 
 export interface WorkspaceWithMetadata {
   _id: string;
@@ -322,8 +320,6 @@ const ProjectRoute: FC = () => {
     projectId: string;
   };
 
-  const { organizations } = useOrganizationLoaderData();
-
   const [searchParams, setSearchParams] = useSearchParams();
   const [isGitRepositoryCloneModalOpen, setIsGitRepositoryCloneModalOpen] =
     useState(false);
@@ -468,7 +464,7 @@ const ProjectRoute: FC = () => {
           className="new-sidebar"
           renderPageSidebar={
             <div className="flex flex-1 flex-col overflow-hidden divide-solid divide-y divide-[--hl-md]">
-              <div className="p-[--padding-sm]">
+              {/* <div className="p-[--padding-sm]">
                 <Select
                   aria-label="Organizations"
                   onSelectionChange={id => {
@@ -512,7 +508,7 @@ const ProjectRoute: FC = () => {
                     </ListBox>
                   </Popover>
                 </Select>
-              </div>
+              </div> */}
               <div className="flex flex-col flex-1">
                 <Heading className="p-[--padding-sm] uppercase text-xs">
                   Projects ({projectsCount})
@@ -673,7 +669,7 @@ const ProjectRoute: FC = () => {
                   );
                 }}
               </GridList>
-              <Button
+              {/* <Button
                 aria-label="Explore subscriptions"
                 className="outline-none select-none flex hover:bg-[--hl-xs] focus:bg-[--hl-sm] transition-colors gap-2 px-4 items-center h-[--line-height-xs] w-full overflow-hidden text-[--hl]"
                 onPress={() => {
@@ -685,7 +681,7 @@ const ProjectRoute: FC = () => {
                 <span className="truncate capitalize">
                   Explore subscriptions
                 </span>
-              </Button>
+              </Button> */}
             </div>
           }
           renderPaneOne={

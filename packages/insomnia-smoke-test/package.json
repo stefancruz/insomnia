@@ -5,11 +5,11 @@
   "license": "Apache-2.0",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Kong/insomnia.git",
+    "url": "git+https://github.com/stefancruz/insomnia.git",
     "directory": "packages/insomnia-smoke-test"
   },
   "bugs": {
-    "url": "https://github.com/kong/insomnia/issues"
+    "url": "https://github.com/stefancruz/insomnia/issues"
   },
   "version": "2023.5.8",
   "scripts": {
@@ -38,9 +38,9 @@
     "execa": "^5.0.0",
     "express": "^4.17.1",
     "express-basic-auth": "^1.2.0",
-    "graphql-http": "^1.21.0",
     "faker": "^5.1.0",
     "graphql": "^16.7.1",
+    "graphql-http": "^1.21.0",
     "jest": "^28.1.0",
     "oidc-provider": "^7.10.6",
     "uuid": "^8.3.2",
@@ -48,7 +48,7 @@
     "xvfb-maybe": "^0.2.1"
   },
   "description": "[![Playwright](https://img.shields.io/badge/playwright-blue.svg?style=for-the-badge&logo=playwright)](https://github.com/microsoft/playwright)",
-  "homepage": "https://github.com/Kong/insomnia#readme",
+  "homepage": "https://github.com/stefancruz/insomnia#readme",
   "main": ".eslintrc.js",
   "directories": {
     "doc": "docs",

@@ -7,9 +7,6 @@ import {
   Button,
   Item,
   Link,
-  Menu,
-  MenuTrigger,
-  Popover,
   Tooltip,
   TooltipTrigger,
 } from 'react-aria-components';
@@ -18,19 +15,11 @@ import {
   NavLink,
   Outlet,
   useLoaderData,
-  useLocation,
-  useNavigate,
   useParams,
   useRouteLoaderData,
 } from 'react-router-dom';
 
-import {
-  getFirstName,
-  getLastName,
-  isLoggedIn,
-  logout,
-  onLoginLogout,
-} from '../../account/session';
+
 import { isDevelopment } from '../../common/constants';
 import * as models from '../../models';
 import { isDefaultOrganization } from '../../models/organization';
@@ -51,7 +40,6 @@ import { showError, showModal } from '../components/modals';
 import { AlertModal } from '../components/modals/alert-modal';
 import { AskModal } from '../components/modals/ask-modal';
 import { ImportModal } from '../components/modals/import-modal';
-import { LoginModal, showLoginModal } from '../components/modals/login-modal';
 import {
   SettingsModal,
   showSettingsModal,
@@ -97,8 +85,6 @@ const getNameInitials = (name: string) => {
 };
 
 const Root = () => {
-  const navigate = useNavigate();
-  const location = useLocation();
   const { settings } = useLoaderData() as RootLoaderData;
   const { organizations } = useOrganizationLoaderData();
   const workspaceData = useRouteLoaderData(
@@ -106,16 +92,6 @@ const Root = () => {
   ) as WorkspaceLoaderData | null;
   const [importUri, setImportUri] = useState('');
   const patchSettings = useSettingsPatcher();
-
-  useEffect(() => {
-    onLoginLogout(() => {
-      // Update the hash of the current route to force revalidation of data
-      navigate({
-        pathname: location.pathname,
-        hash: 'revalidate=true',
-      });
-    });
-  }, [location.pathname, navigate]);
 
   useEffect(() => {
     return window.main.on(
@@ -143,14 +119,6 @@ const Root = () => {
             showModal(AlertModal, {
               title: params.title,
               message: params.message,
-            });
-            break;
-
-          case 'insomnia://app/auth/login':
-            showModal(LoginModal, {
-              title: params.title,
-              message: params.message,
-              reauth: true,
             });
             break;
 
@@ -266,19 +234,19 @@ const Root = () => {
 
   const crumbs = workspaceData
     ? [
-        {
-          id: workspaceData.activeProject._id,
-          label: workspaceData.activeProject.name,
-          node: (
-            <Link data-testid="project">
-              <NavLink
-                to={`/organization/${organizationId}/project/${workspaceData.activeProject._id}`}
-              >
-                {workspaceData.activeProject.name}
-              </NavLink>
-            </Link>
-          ),
-        },
+      // {
+      //   id: workspaceData.activeProject._id,
+      //   label: workspaceData.activeProject.name,
+      //   node: (
+      //     <Link data-testid="project">
+      //       <NavLink
+      //         to={`/organization/${organizationId}/project/${workspaceData.activeProject._id}`}
+      //       >
+      //         {workspaceData.activeProject.name}
+      //       </NavLink>
+      //     </Link>
+      //   ),
+      // },
         {
           id: workspaceData.activeWorkspace._id,
           label: workspaceData.activeWorkspace.name,
@@ -308,7 +276,7 @@ const Root = () => {
                 <div className="flex w-[50px] py-2">
                   <InsomniaAILogo />
                 </div>
-                {!isLoggedIn() ? <GitHubStarsButton /> : null}
+                {<GitHubStarsButton />}
               </div>
               <div className="flex gap-2 flex-nowrap items-center justify-center">
                 {workspaceData && (
@@ -339,64 +307,6 @@ const Root = () => {
                         ))}
                       </nav>
                     )}
-                  </Fragment>
-                )}
-              </div>
-              <div className="flex gap-[--padding-sm] items-center justify-end p-2">
-                {isLoggedIn() ? (
-                  <MenuTrigger>
-                    <Button className="px-4 py-1 flex items-center justify-center gap-2 aria-pressed:bg-[--hl-sm] rounded-sm text-[--color-font] hover:bg-[--hl-xs] focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm">
-                      <Icon icon="user" />{' '}
-                      {`${getFirstName()} ${getLastName()}`}
-                    </Button>
-                    <Popover className="min-w-max">
-                      <Menu
-                        onAction={action => {
-                          if (action === 'logout') {
-                            logout();
-                          }
-
-                          if (action === 'account-settings') {
-                            window.main.openInBrowser(
-                              'https://app.insomnia.rest/app/account/'
-                            );
-                          }
-                        }}
-                        className="border select-none text-sm min-w-max border-solid border-[--hl-sm] shadow-lg bg-[--color-bg] py-2 rounded-md overflow-y-auto max-h-[85vh] focus:outline-none"
-                      >
-                        <Item
-                          id="account-settings"
-                          className="flex gap-2 px-[--padding-md] aria-selected:font-bold items-center text-[--color-font] h-[--line-height-xs] w-full text-md whitespace-nowrap bg-transparent hover:bg-[--hl-sm] disabled:cursor-not-allowed focus:bg-[--hl-xs] focus:outline-none transition-colors"
-                          aria-label="Account settings"
-                        >
-                          <Icon icon="gear" />
-                          <span>Account Settings</span>
-                        </Item>
-                        <Item
-                          id="logout"
-                          className="flex gap-2 px-[--padding-md] aria-selected:font-bold items-center text-[--color-font] h-[--line-height-xs] w-full text-md whitespace-nowrap bg-transparent hover:bg-[--hl-sm] disabled:cursor-not-allowed focus:bg-[--hl-xs] focus:outline-none transition-colors"
-                          aria-label="logout"
-                        >
-                          <Icon icon="sign-out" />
-                          <span>Logout</span>
-                        </Item>
-                      </Menu>
-                    </Popover>
-                  </MenuTrigger>
-                ) : (
-                  <Fragment>
-                    <Button
-                      onPress={showLoginModal}
-                      className="px-4 py-1 font-semibold border border-solid border-[--hl-md] flex items-center justify-center gap-2 aria-pressed:bg-[--hl-sm] rounded-sm text-[--color-font] hover:bg-[--hl-xs] focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm"
-                    >
-                      Login
-                    </Button>
-                    <a
-                      className="px-4 py-1 flex items-center justify-center gap-2 aria-pressed:bg-[rgba(var(--color-surprise-rgb),0.8)] focus:bg-[rgba(var(--color-surprise-rgb),0.9)] bg-[--color-surprise] font-semibold rounded-sm text-[--color-font-surprise] focus:ring-inset ring-1 ring-transparent focus:ring-[--hl-md] transition-all text-sm"
-                      href="https://app.insomnia.rest/app/signup/"
-                    >
-                      Sign Up
-                    </a>
                   </Fragment>
                 )}
               </div>
@@ -457,7 +367,7 @@ const Root = () => {
                   />
                 </Tooltip>
               </TooltipTrigger>
-              <Link>
+              {/* <Link>
                 <a
                   className="flex focus:outline-none focus:underline gap-1 items-center text-xs text-[--color-font] px-[--padding-md]"
                   href="https://konghq.com/"
@@ -466,7 +376,7 @@ const Root = () => {
                   <Icon className="text-[--color-surprise]" icon="heart" /> by
                   Kong
                 </a>
-              </Link>
+              </Link> */}
             </div>
           </div>
 

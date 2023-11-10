@@ -25,7 +25,6 @@ import { isWebSocketRequestId, WebSocketRequest } from '../../models/websocket-r
 import { WebSocketResponse } from '../../models/websocket-response';
 import { fetchRequestData, responseTransform, sendCurlAndWriteTimeline, tryToInterpolateRequest } from '../../network/network';
 import { invariant } from '../../utils/invariant';
-import { SegmentEvent } from '../analytics';
 import { updateMimeType } from '../components/dropdowns/content-type-dropdown';
 import { CreateRequestType } from '../hooks/use-request';
 
@@ -169,8 +168,6 @@ export const createRequestAction: ActionFunction = async ({ request, params }) =
   }
   invariant(typeof activeRequestId === 'string', 'Request ID is required');
   models.stats.incrementCreatedRequests();
-  window.main.trackSegmentEvent({ event: SegmentEvent.requestCreate, properties: { requestType } });
-
   return redirect(`/organization/${organizationId}/project/${projectId}/workspace/${workspaceId}/debug/request/${activeRequestId}`);
 };
 export const updateRequestAction: ActionFunction = async ({ request, params }) => {

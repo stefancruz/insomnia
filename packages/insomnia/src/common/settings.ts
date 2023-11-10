@@ -112,8 +112,6 @@ export interface Settings {
   editorKeyMap: string;
   editorLineWrapping: boolean;
 
-  /** If true, Insomnia will send anonymous data about features and plugins used. */
-  enableAnalytics: boolean;
   filterResponsesByEnv: boolean;
   followRedirects: boolean;
   fontInterface: string | null;

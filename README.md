@@ -17,7 +17,7 @@ from the website.
 ## Bugs and Feature Requests
 
 Have a bug or a feature request? First, read the
-[issue guidelines](CONTRIBUTING.md#using-the-issue-tracker) and search for existing and closed issues. If your problem or idea is not addressed yet, [please open a new issue](https://github.com/Kong/insomnia/issues).
+[issue guidelines](CONTRIBUTING.md#using-the-issue-tracker) and search for existing and closed issues. If your problem or idea is not addressed yet, [please open a new issue](https://github.com/stefancruz/insomnia/issues).
 
 For more generic product questions and feedback, join the [Slack Team](https://chat.insomnia.rest).
 
